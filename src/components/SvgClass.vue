@@ -52,6 +52,19 @@ export default defineComponent({
       const currentPoint = { x: e.layerX, y: e.layerY };
 
       if (this.selectedPoint) {
+        if (
+          check_a_point(
+            currentPoint.x,
+            currentPoint.y,
+            this.selectedPoint.x,
+            this.selectedPoint.y,
+            3
+          )
+        ) {
+          const i = this.lo.indexOf(this.selectedPoint);
+          this.lo.splice(i, 1);
+          return;
+        }
         const i = this.lo.indexOf(this.selectedPoint);
         console.log("Index:", i);
         this.lo.splice(i, 1);
@@ -62,6 +75,7 @@ export default defineComponent({
       } else this.lo.push(currentPoint);
 
       this.mouseDown = false;
+      this.selectedPoint = undefined;
     },
     handleMouseMove(e: MouseEvent) {
       if (this.mouseDown) console.log("Mouse Move");
