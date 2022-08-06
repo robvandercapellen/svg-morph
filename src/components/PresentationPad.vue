@@ -75,7 +75,6 @@ export default defineComponent({
         if (previous === "") return `M${current.x} ${current.y}`; //`M{current.x} {current.y}`
         return `${previous} L${current.x} ${current.y}`;
       }, ``);
-      console.log("Path: ", path);
 
       return path;
     },
@@ -84,7 +83,6 @@ export default defineComponent({
       //this.mouseDown = false;
     },
     handleMouseUp(e: MouseEvent) {
-      console.log("Mouse Up");
       const currentPoint = { x: e.layerX, y: e.layerY };
 
       // In case an existing point was dragged:
@@ -136,12 +134,10 @@ export default defineComponent({
     },
     handleMouseDown(e: MouseEvent) {
       this.mouseDown = true;
-      console.log("testing: ", e.layerX, e.layerY);
       const found = this.lo.find((l) => {
         return point_overlap(+l.x, +l.y, e.layerX, e.layerY, this.circleSize);
       });
       if (found) this.selectedPoint = found;
-      console.log("testing: ", this.lo);
     },
   },
 });

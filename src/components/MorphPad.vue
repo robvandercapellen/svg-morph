@@ -31,6 +31,11 @@ import { defineComponent } from "vue";
 import DrawPad from "./DrawPad.vue";
 import PresentationPad from "./PresentationPad.vue";
 import type { Point } from "../utils/types";
+import { interpolateObject } from "d3-interpolate";
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 export default defineComponent({
   data: () => {
@@ -45,19 +50,26 @@ export default defineComponent({
     equalCount() {
       if (!this.fromImage || !this.toImage) return false;
       const value = this.fromImage.length === this.toImage.length;
-      console.log(
-        `equal count ${this.fromImage.length}:${this.toImage.length} => ${value}`
-      );
       return this.fromImage.length === this.toImage.length;
     },
   },
   methods: {
-    handleMorph() {
-      console.log("Morphing");
+    async handleMorph() {
+      let morphStep = 0;
+      this.currentImage.splice(0, this.currentImage.length);
+      for (let i = 10; i > 0; i--) {
+        await sleep(200);
+        this.currentImage.splice(0, this.currentImage.length);
+        this.fromImage.forEach((f, index) => {
+          const e = interpolateObject(f, this.toImage[index]);
+
+          console.log("point", e(morphStep), morphStep);
+          this.currentImage.push(e(morphStep));
+        });
+        morphStep += 1 / 10;
+      }
     },
     addPad1(e: Point, t: Point) {
-      console.log(`add pad 1: ${e.x}: ${e.y}, ${t}`);
-      this.currentImage.push(e);
       this.fromImage.push(e);
     },
     replacePad1() {
@@ -67,7 +79,6 @@ export default defineComponent({
       console.log("remove pad 1");
     },
     addPad2(e: Point, t: Point) {
-      console.log(`add pad 1: ${e.x}: ${e.y}, ${t}`);
       this.toImage.push(e);
     },
     replacePad2() {
