@@ -33,10 +33,17 @@ import PresentationPad from "./PresentationPad.vue";
 import type { Point } from "../utils/types";
 import { interpolateObject } from "d3-interpolate";
 
+declare interface PointWorker {
+  p: Point;
+  skip: boolean;
+}
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
-
+function simpleDistance(a: Point, b: Point) {
+  return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+}
+const numberOfIterations = 10;
 export default defineComponent({
   data: () => {
     return {
@@ -49,7 +56,6 @@ export default defineComponent({
   computed: {
     equalCount() {
       if (!this.fromImage || !this.toImage) return false;
-      const value = this.fromImage.length === this.toImage.length;
       return this.fromImage.length === this.toImage.length;
     },
   },
@@ -57,17 +63,44 @@ export default defineComponent({
     async handleMorph() {
       let morphStep = 0;
       this.currentImage.splice(0, this.currentImage.length);
-      for (let i = 10; i > 0; i--) {
+
+      const targetImage: Array<Point> = this.normalizeImage(
+        this.fromImage,
+        this.toImage
+      );
+      console.log("image: ", targetImage);
+      for (let i = 0; i <= numberOfIterations; i++) {
         await sleep(200);
         this.currentImage.splice(0, this.currentImage.length);
         this.fromImage.forEach((f, index) => {
-          const e = interpolateObject(f, this.toImage[index]);
-
-          console.log("point", e(morphStep), morphStep);
+          const e = interpolateObject(f, targetImage[index]);
           this.currentImage.push(e(morphStep));
         });
-        morphStep += 1 / 10;
+        morphStep += 1 / numberOfIterations;
       }
+    },
+    normalizeImage(fromImage: Point[], toImage: Point[]): Array<Point> {
+      const remaining = toImage.map((p) => {
+        return { p, skip: false };
+      });
+      return fromImage.map<Point>((point: Point): Point => {
+        const res = this.findNearestIndex(point, remaining);
+        remaining[res].skip = true;
+        return toImage[res];
+      });
+    },
+    findNearestIndex(point: Point, to: PointWorker[]) {
+      let shortestIndex = this.selectFirstValidIndex(to);
+      to.forEach((current, index) => {
+        if (to[index].skip) return shortestIndex;
+        const previousDistance = simpleDistance(point, to[shortestIndex].p);
+        const currentDistance = simpleDistance(point, current.p);
+        if (previousDistance > currentDistance) shortestIndex = index;
+      });
+      return shortestIndex;
+    },
+    selectFirstValidIndex(to: PointWorker[]) {
+      return to.findIndex((p: PointWorker) => p.skip === false);
     },
     addPad1(e: Point, t: Point) {
       this.fromImage.push(e);

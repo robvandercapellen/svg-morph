@@ -1,0 +1,57 @@
+declare interface Point {
+  x: number;
+  y: number;
+}
+declare interface PointWorker {
+  p: Point;
+  skip: boolean;
+}
+const fromImage = [
+  { x: 0, y: 0 },
+  { x: 0, y: 3 },
+  { x: 3, y: 3 },
+];
+
+const toImage = [
+  { x: 0, y: 0 },
+  { x: 0, y: 3 },
+  { x: 3, y: 3 },
+];
+
+function simpleDistance(a: Point, b: Point) {
+  return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+}
+function findNearestIndex(point: Point, to: PointWorker[]) {
+  let shortestIndex = 0;
+  to;
+  to.forEach((current, index) => {
+    if (to[index].skip) return shortestIndex;
+    const previousDistance = simpleDistance(point, to[shortestIndex].p);
+    const currentDistance = simpleDistance(point, current.p);
+    to;
+    shortestIndex;
+    if (previousDistance > currentDistance) shortestIndex = index;
+  });
+  return shortestIndex;
+}
+
+function normalizeImage(fromImage: Point[], toImage: Point[]): Array<Point> {
+  const remaining = toImage.map((p) => {
+    return { p, skip: false };
+  });
+  return fromImage.map<Point>((point: Point): Point => {
+    console.log("remaining", remaining);
+    const res = findNearestIndex(point, remaining);
+    remaining[res].skip = true;
+    console.log("remaining", remaining);
+    return toImage[res];
+  });
+}
+
+const a = normalizeImage(fromImage, toImage);
+a;
+
+// let p = findNearest({ x: 1, y: 2 }, toImage);
+// console.log(toImage[p]);
+// const p = findNearestIndex({ x: 2, y: 2 }, toImage);
+// console.log(toImage[p]);

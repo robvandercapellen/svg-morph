@@ -1,4 +1,4 @@
 export declare interface Point {
-  x: string;
-  y: string;
+  x: number;
+  y: number;
 }
