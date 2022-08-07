@@ -27,7 +27,7 @@
 
 <script lang="ts">
 import { defineComponent } from "vue";
-import { point_overlap } from "../utils/graphical";
+import { point_overlap, getIndex } from "../utils/graphical";
 
 export declare interface Point {
   x: string;
@@ -72,7 +72,6 @@ export default defineComponent({
         if (previous === "") return `M${current.x} ${current.y}`; //`M{current.x} {current.y}`
         return `${previous} L${current.x} ${current.y}`;
       }, ``);
-      console.log("Path: ", path);
 
       return path;
     },
@@ -81,12 +80,11 @@ export default defineComponent({
       //this.mouseDown = false;
     },
     handleMouseUp(e: MouseEvent) {
-      console.log("Mouse Up");
       const currentPoint = { x: e.layerX, y: e.layerY };
 
       // In case an existing point was dragged:
       if (this.selectedPoint) {
-        const i = this.lo.indexOf(this.selectedPoint);
+        const i = getIndex(this.selectedPoint, this.lo);
 
         // if an existing point was not moved, but just clicked, then remove that point.
         if (
@@ -100,23 +98,26 @@ export default defineComponent({
         ) {
           this.lo.splice(i, 1);
           this.$emit("remove", this.selectedPoint);
-          return;
-        }
-        // Otherwise remove the old point and insert the new point at the same index as the selected point
-        const found = this.lo.find((l) => {
-          return point_overlap(
-            +l.x,
-            +l.y,
-            currentPoint.x,
-            currentPoint.y,
-            this.circleSize
-          );
-        });
-        // but do this only if the point doesn't already exist.
-        if (!found) {
-          this.lo.splice(i, 1);
-          this.lo.splice(i, 0, currentPoint);
-          this.$emit("replace", { old: this.selectedPoint, new: currentPoint });
+        } else {
+          // Otherwise remove the old point and insert the new point at the same index as the selected point
+          const found = this.lo.find((l) => {
+            return point_overlap(
+              +l.x,
+              +l.y,
+              currentPoint.x,
+              currentPoint.y,
+              this.circleSize
+            );
+          });
+          // but do this only if the point doesn't already exist.
+          if (!found) {
+            this.lo.splice(i, 1);
+            this.lo.splice(i, 0, currentPoint);
+            this.$emit("replace", {
+              old: this.selectedPoint,
+              new: currentPoint,
+            });
+          }
         }
       }
       // otherwise just add the new point.
@@ -133,12 +134,10 @@ export default defineComponent({
     },
     handleMouseDown(e: MouseEvent) {
       this.mouseDown = true;
-      console.log("testing: ", e.layerX, e.layerY);
       const found = this.lo.find((l) => {
         return point_overlap(+l.x, +l.y, e.layerX, e.layerY, this.circleSize);
       });
       if (found) this.selectedPoint = found;
-      console.log("testing: ", this.lo);
     },
   },
 });

@@ -18,9 +18,22 @@
         ></DrawPad>
       </div>
     </div>
-    <button :onclick="handleMorph" class="morph-button" :disabled="!equalCount">
-      Morph
-    </button>
+    <div>
+      <button
+        :onclick="handleMorph"
+        class="morph-button"
+        :disabled="!equalCount"
+      >
+        Morph
+      </button>
+      <button
+        :onclick="handleMorphClose"
+        class="morph-button"
+        :disabled="!equalCount"
+      >
+        Morph close
+      </button>
+    </div>
     <div class="presentation-pad">
       <PresentationPad :box-size="200" :lo="currentImage"></PresentationPad>
     </div>
@@ -32,17 +45,14 @@ import DrawPad from "./DrawPad.vue";
 import PresentationPad from "./PresentationPad.vue";
 import type { Point } from "../utils/types";
 import { interpolateObject } from "d3-interpolate";
+import { sleep } from "../utils/system";
+import { getIndex, simpleDistance } from "../utils/graphical";
 
 declare interface PointWorker {
   p: Point;
   skip: boolean;
 }
-function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-function simpleDistance(a: Point, b: Point) {
-  return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
-}
+
 const numberOfIterations = 10;
 export default defineComponent({
   data: () => {
@@ -61,6 +71,20 @@ export default defineComponent({
   },
   methods: {
     async handleMorph() {
+      let morphStep = 0;
+      this.currentImage.splice(0, this.currentImage.length);
+
+      for (let i = 0; i <= numberOfIterations; i++) {
+        await sleep(200);
+        this.currentImage.splice(0, this.currentImage.length);
+        this.fromImage.forEach((f, index) => {
+          const e = interpolateObject(f, this.toImage[index]);
+          this.currentImage.push(e(morphStep));
+        });
+        morphStep += 1 / numberOfIterations;
+      }
+    },
+    async handleMorphClose() {
       let morphStep = 0;
       this.currentImage.splice(0, this.currentImage.length);
 
@@ -102,23 +126,27 @@ export default defineComponent({
     selectFirstValidIndex(to: PointWorker[]) {
       return to.findIndex((p: PointWorker) => p.skip === false);
     },
-    addPad1(e: Point, t: Point) {
+    addPad1(e: Point) {
       this.fromImage.push(e);
     },
-    replacePad1() {
-      console.log("replace pad 1");
+    replacePad1(op: Point, np: Point) {
+      const i = getIndex(op, this.fromImage);
+      this.fromImage.splice(i, 1, np);
     },
-    removePad1() {
-      console.log("remove pad 1");
+    removePad1(p: Point) {
+      const i = getIndex(p, this.fromImage);
+      this.fromImage.splice(i, 1);
     },
-    addPad2(e: Point, t: Point) {
+    addPad2(e: Point) {
       this.toImage.push(e);
     },
-    replacePad2() {
-      console.log("replace pad 1");
+    replacePad2(op: Point, np: Point) {
+      const i = getIndex(op, this.toImage);
+      this.toImage.splice(i, 1, np);
     },
-    removePad2() {
-      console.log("remove pad 1");
+    removePad2(p: Point) {
+      const i = getIndex(p, this.toImage);
+      this.toImage.splice(i, 1);
     },
   },
 });
@@ -130,7 +158,7 @@ export default defineComponent({
   width: 100%;
 }
 .morph-button {
-  width: 60px;
+  width: 160px;
   height: 30px;
 }
 .draw-container {
